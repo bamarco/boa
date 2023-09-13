@@ -3,7 +3,13 @@
 
 import sys
 import argparse
-from boa.core.monkeypatch import *
+
+from boa.core import monkey_patch_emscripten
+
+if any("emscripten" in arg for arg in sys.argv):
+    print("Monkeypatching emscripten")
+    monkey_patch_emscripten.patch()
+
 from boa.core.config import init_global_config
 from boa._version import __version__
 from mamba.utils import init_api_context
@@ -36,6 +42,11 @@ def main(config=None):
     parent_parser.add_argument("--target-platform", type=str)
     parent_parser.add_argument("--json", action="store_true")
     parent_parser.add_argument("--debug", action="store_true")
+    parent_parser.add_argument(
+        "--pyproject-recipes",
+        action="store_true",
+        help="""Use [tool.boa] section from pyproject.toml as a recipe instead of a separate recipe.yaml.""",
+    )
 
     variant_parser = argparse.ArgumentParser(add_help=False)
     variant_parser.add_argument(
@@ -58,6 +69,18 @@ def main(config=None):
         "validate",
         parents=[parent_parser],
         help="Validate recipe.yaml",
+    )
+
+    test_parser = argparse.ArgumentParser(add_help=False)
+    test_parser.add_argument(
+        "--extra-deps",
+        action="append",
+        help="Extra dependencies to add to all test environment creation steps.",
+    )
+    subparsers.add_parser(
+        "test",
+        parents=[parent_parser, test_parser],
+        help="test an already built package (include_recipe of the package must be true)",
     )
 
     build_parser = argparse.ArgumentParser(add_help=False)
@@ -156,6 +179,13 @@ def main(config=None):
         default=22,
     )
 
+    for k in ("perl", "lua", "python", "numpy", "r_base"):
+        conda_build_parser.add_argument(
+            "--{}".format(k),
+            dest="{}_variant".format(k),
+            help="Set the {} variant used by conda build.".format(k),
+        )
+
     subparsers.add_parser(
         "build",
         parents=[parent_parser, build_parser, variant_parser],
@@ -191,6 +221,7 @@ def main(config=None):
     from boa.cli import convert
     from boa.cli import transmute
     from boa.cli import validate
+    from boa.cli import test
 
     if command == "convert":
         convert.main(args.target)
@@ -198,6 +229,10 @@ def main(config=None):
 
     if command == "validate":
         validate.main(args.target)
+        exit()
+
+    if command == "test":
+        test.main(args)
         exit()
 
     if command == "transmute":

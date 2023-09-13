@@ -13,7 +13,7 @@ from rich.padding import Padding
 
 from conda.base.context import context
 from conda_build.config import get_or_merge_config
-from conda_build.utils import apply_pin_expressions
+from conda_build.utils import apply_pin_expressions, RUN_EXPORTS_TYPES
 from conda.models.channel import Channel as CondaChannel
 from conda_build.metadata import eval_selector, ns_cfg
 from conda_build.jinja_context import native_compiler
@@ -60,6 +60,7 @@ class Output:
 
         set_section("build")
         set_section("package")
+        set_section("about")
         set_section("app")
         set_section("extra")
         set_section("test")
@@ -123,14 +124,14 @@ class Output:
         self.sections["requirements"] = self.requirements
 
         # handle strong and weak run exports
-        self.run_exports = {"weak": [], "strong": []}
+        self.run_exports = {key: [] for key in RUN_EXPORTS_TYPES}
         if self.sections["build"].get("run_exports"):
             if isinstance(self.sections["build"]["run_exports"], list):
                 self.run_exports["weak"] = [
                     CondaBuildSpec(el) for el in self.sections["build"]["run_exports"]
                 ]
             else:
-                for strength in ["weak", "strong"]:
+                for strength in RUN_EXPORTS_TYPES:
                     self.run_exports[strength] = [
                         CondaBuildSpec(el)
                         for el in self.sections["build"]["run_exports"].get(
@@ -188,6 +189,7 @@ class Output:
             + self.requirements.get("run")
             + self.run_exports.get("weak")
             + self.run_exports.get("strong")
+            + self.run_exports.get("noarch")
         )
 
         return requirements
@@ -512,7 +514,7 @@ class Output:
             specs = self.requirements[env]
 
             for s in specs:
-                if s.is_pin:
+                if s.is_pin_subpackage:
                     s.eval_pin_subpackage(all_outputs)
                 if env == "run" and s.is_pin_compatible:
                     s.eval_pin_compatible(
