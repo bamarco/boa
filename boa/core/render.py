@@ -167,7 +167,7 @@ def default_jinja_vars(config):
 
 
 def render(recipe_path, config=None, is_pyproject_recipe=False):
-    # console.print(f"\n[yellow]Rendering {recipe_path}[/yellow]\n")
+    console.print(f"\n[yellow]Rendering {recipe_path}[/yellow]\n")
     # step 1: parse YAML
     with open(recipe_path, "rb") as fi:
         if is_pyproject_recipe:
@@ -206,6 +206,6 @@ def render(recipe_path, config=None, is_pyproject_recipe=False):
 
     # Normalize the entire recipe
     ydoc = normalize_recipe(ydoc)
-    # console.print("\n[yellow]Normalized recipe[/yellow]\n")
+    console.print("\n[yellow]Normalized recipe[/yellow]\n")
     # console.print(ydoc)
     return ydoc
