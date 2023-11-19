@@ -65,8 +65,8 @@ def get_metadata(yml, config, is_pyproject_recipe=False):
 
                 d = toml.load(fi)["tool"]["boa"]
         else:
-            yy = YAML(typ='safe', pure=True)
-            d = yy.load(fi)
+            yaml = YAML(typ='safe')
+            d = yaml.load(fi)
     o = Output(d, config)
     return MetaData(os.path.dirname(yml), o)
 
